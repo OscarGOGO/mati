@@ -62,7 +62,7 @@ Below we show a minimal example workflow using some of these functions.
 In this example we assume you have a camera-trap dataset like:
 
 ``` r
-datab <- read.csv("G:/Mi unidad/R/Fototrampeo/sipecam_final.csv", header = TRUE)
+datab <- read.csv("sipecam_final.csv", header = TRUE)
 ```
 
 ``` r
@@ -412,10 +412,10 @@ burnin = 500
 
 out$bf.table
 #>    Prior  Posterior
-#> D   0.25 0.02115744
+#> D   0.25 0.02447072
 #> N   0.25 0.00000000
 #> CR  0.25 0.00000000
-#> C   0.25 0.97884256
+#> C   0.25 0.97552928
 ```
 
 Plot our parameter chains:
@@ -518,67 +518,39 @@ long = "Longitud",
 alpha = 300, # spatial scale (m)
 dt = 1, # time step (hours)
 alpha_sensitivity = seq(200, 10000, 200), # optional sensitivity analysis
-min_prob = 0.1
+min_prob = 0.5
 )
 ```
 
 ``` r
 mni_res$MNI
 #>                  species MNI alpha dt min_prob
-#> 1 Odocoileus virginianus   8   300  1      0.1
+#> 1 Odocoileus virginianus  41   300  1      0.5
 ```
 
 ``` r
 head(mni_res$data_with_ids)
-#>        ID          Carpeta Integridad Station Latitud  Longitud Comunidad
-#> 901   764 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291 Tancitaro
-#> 721  1964 1_81_1_1500_9862       alta 1500_05 19.4493 -102.2333       NSJ
-#> 702   490 1_81_1_1500_9617       alta 1500_04 19.4470 -102.2357       NSJ
-#> 902   776 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291 Tancitaro
-#> 903   784 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291 Tancitaro
-#> 1018  173 1_81_0_1503_0058      media 1503_05 19.4070 -102.4233 Tancitaro
-#>      Muestreo                Species ncomun    grupo carnivoro DateTimeOriginal
-#> 901     Secas Odocoileus virginianus Venado Mamifero           14/12/2021 18:46
-#> 721     Secas Odocoileus virginianus Venado Mamifero           20/12/2021 18:25
-#> 702     Secas Odocoileus virginianus Venado Mamifero            24/12/2021 9:36
-#> 902     Secas Odocoileus virginianus Venado Mamifero            27/12/2021 9:44
-#> 903     Secas Odocoileus virginianus Venado Mamifero           27/12/2021 19:33
-#> 1018    Secas Odocoileus virginianus Venado Mamifero             7/01/2022 9:06
-#>            Date                Time delta.time.secs delta.time.mins
-#> 901  14/12/2021 2021-12-14 18:46:34               0             0.0
-#> 721  20/12/2021 2021-12-20 18:25:32               0             0.0
-#> 702  24/12/2021 2021-12-24 09:36:01               0             0.0
-#> 902  27/12/2021 2021-12-27 09:44:29          122046          2034.1
-#> 903  27/12/2021 2021-12-27 19:33:57              16             0.3
-#> 1018 07/01/2022 2022-01-07 09:06:20               0             0.0
-#>      delta.time.hours delta.time.days Individuos
-#> 901               0.0             0.0         NA
-#> 721               0.0             0.0         NA
-#> 702               0.0             0.0         NA
-#> 902              33.9             1.4         NA
-#> 903               0.0             0.0         NA
-#> 1018              0.0             0.0         NA
-#>                                                         Directory
-#> 901  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1503_9381
-#> 721  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1500_9862
-#> 702  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1500_9617
-#> 902  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1503_9381
-#> 903  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1503_9381
-#> 1018 C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1503_0058
-#>                                           FileName indiv_id prob_last_ind
-#> 901  1_81_0_1503_9381__2021-12-14__18-46-34(1).JPG        1  1.000000e+00
-#> 721  1_81_1_1500_9862__2021-12-20__18-25-32(1).JPG        2  4.297053e-28
-#> 702  1_81_1_1500_9617__2021-12-24__09-36-01(1).JPG        2  2.195745e-01
-#> 902  1_81_0_1503_9381__2021-12-27__09-44-29(1).JPG        1  5.000000e-01
-#> 903  1_81_0_1503_9381__2021-12-27__19-33-57(4).JPG        1  5.517182e-01
-#> 1018 1_81_0_1503_0058__2022-01-07__09-06-20(1).JPG        1  5.000000e-01
-#>      prob_new_ind
-#> 901     1.0000000
-#> 721     1.0000000
-#> 702     0.7804255
-#> 902     0.5000000
-#> 903     0.4482818
-#> 1018    0.5000000
+#>        ID          Carpeta Integridad Station Latitud  Longitud
+#> 901   764 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291
+#> 721  1964 1_81_1_1500_9862       alta 1500_05 19.4493 -102.2333
+#> 702   490 1_81_1_1500_9617       alta 1500_04 19.4470 -102.2357
+#> 902   776 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291
+#> 903   784 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291
+#> 1018  173 1_81_0_1503_0058      media 1503_05 19.4070 -102.4233
+#>                     Species       Date                Time Individuos indiv_id
+#> 901  Odocoileus virginianus 14/12/2021 2021-12-14 18:46:34          1        1
+#> 721  Odocoileus virginianus 20/12/2021 2021-12-20 18:25:32          1        2
+#> 702  Odocoileus virginianus 24/12/2021 2021-12-24 09:36:01          1        3
+#> 902  Odocoileus virginianus 27/12/2021 2021-12-27 09:44:29          1        4
+#> 903  Odocoileus virginianus 27/12/2021 2021-12-27 19:33:57          1        4
+#> 1018 Odocoileus virginianus 07/01/2022 2022-01-07 09:06:20          1        5
+#>      prob_last_ind prob_new_ind
+#> 901       1.000000     1.000000
+#> 721       0.000000     1.000000
+#> 702       0.219574     0.780426
+#> 902       0.500000     0.500000
+#> 903       0.551718     0.448282
+#> 1018      0.500000     0.500000
 ```
 
 If alpha_sensitivity is provided, the function can additionally plot how
@@ -588,7 +560,7 @@ the MNI varies with the spatial scale parameter.
 mni_res$`Plot MNI vs α`
 ```
 
-<img src="man/figures/README-unnamed-chunk-24-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-24-1.png" width="60%" height="120%" />
 
 ### **Dependencies**
 

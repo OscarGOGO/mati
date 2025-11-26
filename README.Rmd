@@ -82,7 +82,7 @@ datab <- read.csv("G:/Mi unidad/R/Fototrampeo/sipecam_final.csv", header = TRUE)
 ```
 
 ```{r eval=FALSE}
-datab <- read.csv("G:/Mi unidad/R/Fototrampeo/sipecam_final.csv", header = TRUE)
+datab <- read.csv("sipecam_final.csv", header = TRUE)
 
 ```
 
@@ -173,7 +173,7 @@ pd$period_table
 
 The period_table can be used directly as input for Diel.Niche:
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 library(Diel.Niche)
 library(coda)
 library(bayesplot)
@@ -286,11 +286,11 @@ long = "Longitud",
 alpha = 300, # spatial scale (m)
 dt = 1, # time step (hours)
 alpha_sensitivity = seq(200, 10000, 200), # optional sensitivity analysis
-min_prob = 0.1
+min_prob = 0.5
 )
 ```
 
-```{r include=FALSE}
+```{r include=FALSE, eval=TRUE}
 mni_res <- readRDS("G:/Mi unidad/R/mati/test/mni_res.rds")
 ```
 
@@ -305,7 +305,7 @@ head(mni_res$data_with_ids)
 If alpha_sensitivity is provided, the function can additionally plot how
 the MNI varies with the spatial scale parameter.
 
-```{r}
+```{r out.height = "120%"}
 mni_res$`Plot MNI vs α`
 ```
 
