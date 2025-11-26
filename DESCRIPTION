@@ -1,0 +1,23 @@
+Package: mati
+Title: Tools for Camera-Trap Data Processing and Analysis
+Version: 0.0.1
+Authors@R: 
+    person("Oscar", "Godinez", email = "osctapir@gmail.com", 
+           role = c("aut", "cre"))
+Description: Functions to process camera-trap data, estimate independent events, 
+    sampling effort, capture frequency, diel activity periods, and prepare inputs 
+    for iNEXT and Diel.Niche.
+License: GPL-3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: R (>= 4.3.1)
+Imports:
+    suncalc,
+    dplyr,
+    lubridate,
+    sf,
+    ggplot2,
+    iNEXT,
+    patchwork,
+    expm

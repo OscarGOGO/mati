@@ -1,0 +1,316 @@
+---
+output: github_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+[![AppVeyor build
+status](https://ci.appveyor.com/api/projects/status/github/OscarGOGO/Makurhini?branch=master&svg=true)](https://ci.appveyor.com/project/OscarGOGO/Makurhini)
+
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "60%",
+  message=FALSE, warning=FALSE
+)
+```
+
+# **mati R package** 
+
+Tools for processing and analyzing camera-trap data in R. The package is
+designed to support ecological analyses based on camera-trap data.
+***mati*** provides a set of functions to:
+
+-   Identify independent camera-trap events
+
+-   Estimate sampling effort and capture frequency
+
+-   Classify detections into diel periods (twilight, day, night)
+
+-   Generate inputs for diversity estimation (e.g. iNEXT)
+
+-   Prepare diel-period data for use with Diel.Niche
+
+## Installation
+
+You can install the development version from GitHub:
+
+```{r eval=FALSE}
+install.packages("remotes")
+remotes::install_github("YOURUSER/fototrampeoTools")
+```
+
+Then load the package:
+
+```{r}
+library(mati)
+```
+
+## **Main functions (overview)**
+
+-   `event_independ()` – define independent camera-trap events using a
+    temporal threshold.
+
+-   `periods_day()` – classify detections as twilight/day/night using
+    sun times from suncalc.
+
+-   `input_iNEXT()` – generate incidence or frequency data structures
+    for iNEXT.
+
+-   `capture_frequency()` (or equivalent) – compute standardized capture
+    frequencies.
+
+-   `assign_MNI_hmm()` – estimate Minimum Number of Individuals (MNI)
+    using a simple HMM in space–time.
+
+Below we show a minimal example workflow using some of these functions.
+
+## Example data
+
+In this example we assume you have a camera-trap dataset like:
+
+```{r include=FALSE}
+datab <- read.csv("G:/Mi unidad/R/Fototrampeo/sipecam_final.csv", header = TRUE)
+```
+
+```{r eval=FALSE}
+datab <- read.csv("G:/Mi unidad/R/Fototrampeo/sipecam_final.csv", header = TRUE)
+
+```
+
+```{r}
+head(datab)
+```
+
+**Typical columns:**
+
+-   Station – camera station ID
+
+-   Species – species identifier
+
+-   Date – date (e.g. "23/02/2023")
+
+-   Time – time (e.g. "06:30:00")
+
+-   Latitud, Longitud – coordinates in decimal degrees
+
+1.  **Identify independent events**
+
+```{r}
+ev <- event_independ(
+input = datab,
+station_field = "Station",
+species_field = "Species",
+date_field = "Date",
+date_format = "%d/%m/%Y",
+time_field = "Time",
+independent_time = 1,
+independent_units = "hours"
+)
+
+head(ev)
+```
+
+Here, two detections of the same species at the same station within 1
+hour are treated as belonging to the same event.
+
+2.  **Classify detections into diel periods**
+
+We can classify each detection as twilight, day, or night using
+periods_day(). This function uses the suncalc package to compute dawn,
+sunrise, sunset, and dusk from dates and coordinates.
+
+```{r}
+pd <- periods_day(
+input = ev,
+species_field = "Species",
+date_field = "Date",
+date_format = "%d/%m/%Y",
+time_field = "Time",
+tz = "America/Mexico_City",
+lat = "Latitud",
+long = "Longitud"
+)
+
+```
+
+Raw table with new columns Period and Time_period
+
+```{r}
+head(pd$raw_table)
+```
+
+Counts of detections per species and period (twilight, day, night)
+
+```{r}
+pd$period_table
+```
+
+The period_table can be used directly as input for Diel.Niche:
+
+```{r}
+library(Diel.Niche)
+library(coda)
+library(bayesplot)
+```
+
+Example for one species:
+
+```{r}
+y <- as.matrix(pd$period_table["Odocoileus virginianus", ])
+
+out <- diel.fit(
+y = y,
+hyp.set = hyp.sets("Traditional"),
+post.fit = TRUE,
+n.chains = 3,
+n.mcmc = 3000,
+burnin = 500
+)
+
+out$bf.table
+```
+
+Plot our parameter chains:
+
+```{r}
+plot(coda::as.mcmc(out$post.samp.ms.model))
+```
+
+Posterior probabilities of activity in the three diel periods:
+
+```{r}
+plot_title <- ggplot2::ggtitle("Posterior distributions",
+                               "with medians and 95% intervals")
+bayesplot::mcmc_areas(out$post.samp.ms.model, prob = 0.95) + plot_title
+```
+
+or Using ggplot2:
+
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+
+plot(0,xlim=c(0,1),ylim=c(0,12),ylab="Probability Density", xlab="Probability of Activity",
+     main="Virginia Opossum \n Winter 2019")
+polygon(density(out$post.samp.ms.model[,1]), col = "#A73030FF")
+polygon(density(out$post.samp.ms.model[,2]), col = "#EFC000FF")
+polygon(density(out$post.samp.ms.model[,3]), col = "#0073C2FF")
+legend("topright", legend=c("P(twilight)","P(daytime)","P(nighttime)"),lwd=8,
+       col=c("#A73030FF","#EFC000FF","#0073C2FF"))
+```
+
+3.  **Generate iNEXT input**
+
+`input_iNEXT()` prepares incidence or frequency data structures
+compatible with iNEXT:
+
+```{r}
+library(iNEXT)
+```
+
+Incidence raw format (presence/absence by sampling unit, effort = days)
+
+```{r}
+inext_raw <- input_iNEXT(
+input = datab,
+effort = "days",
+species_field = "Species",
+date_field = "Date",
+date_format = "%d/%m/%Y",
+type = "raw"
+)
+
+out_raw <- iNEXT(inext_raw, q = 0, datatype = "incidence_raw")
+ggiNEXT(out_raw, type = 1)
+```
+
+For a frequency-based representation:
+
+```{r}
+inext_freq <- input_iNEXT(
+input = datab,
+effort = "days",
+species_field = "Species",
+assemblages = "Muestreo", # e.g. sampling season/category
+date_field = "Date",
+date_format = "%d/%m/%Y",
+type = "frequency"
+)
+
+out_freq <- iNEXT(inext_freq, q = 0, datatype = "incidence_freq")
+ggiNEXT(out_freq, type = 1)
+```
+
+4.  **Estimating MNI with assign_MNI_hmm()**
+
+If your data include coordinates and you want to estimate a Minimum
+Number of Individuals (MNI) using a space–time model:
+
+```{r eval=FALSE}
+mni_res <- assign_MNI_hmm(
+data = ev,
+station_field = "Station",
+species_col = "Species",
+date_field = "Date",
+date_format = "%d/%m/%Y",
+time_field = "Time",
+tz = "UTC",
+species_filter = "Odocoileus virginianus",
+lat = "Latitud",
+long = "Longitud",
+alpha = 300, # spatial scale (m)
+dt = 1, # time step (hours)
+alpha_sensitivity = seq(200, 10000, 200), # optional sensitivity analysis
+min_prob = 0.1
+)
+```
+
+```{r include=FALSE}
+mni_res <- readRDS("G:/Mi unidad/R/mati/test/mni_res.rds")
+```
+
+```{r}
+mni_res$MNI
+```
+
+```{r }
+head(mni_res$data_with_ids)
+```
+
+If alpha_sensitivity is provided, the function can additionally plot how
+the MNI varies with the spatial scale parameter.
+
+```{r}
+mni_res$`Plot MNI vs α`
+```
+
+### **Dependencies**
+
+-   The package relies on several commonly used R packages, including:
+
+-   suncalc – sun times (dawn, sunrise, sunset, dusk)
+
+-   dplyr – data wrangling
+
+-   lubridate – date–time handling
+
+-   ggplot2 – plotting
+
+-   iNEXT – diversity estimation
+
+-   Diel.Niche – diel niche modeling (optional, downstream)
+
+-   Make sure these are listed in DESCRIPTION under Imports or Suggests.
+
+### Contributing
+
+Issues and pull requests are welcome! Please use the GitHub issue
+tracker to report bugs, request features, or discuss ideas.
