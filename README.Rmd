@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# **mati R package** 
+# **mati R package**
 
 Tools for processing and analyzing camera-trap data in R. The package is
 designed to support ecological analyses based on camera-trap data.
@@ -122,7 +122,24 @@ head(ev)
 Here, two detections of the same species at the same station within 1
 hour are treated as belonging to the same event.
 
-2.  **Classify detections into diel periods**
+2.  **Estimate Capture Frequency**
+
+Example 1: All species. The values set for the station_field and sampling_effort parameters are not the actual values.
+
+```{r}
+fq <- freq_capture(input = datab,
+                   species = NULL,
+                   species_field = "Species",
+                   station_field = "Station",
+                   total_stations = 52,
+                   sampling_effort = 4740,
+                   distance_clean = NULL,
+                   lat = NULL,
+                   long = NULL)
+fq
+```
+
+3.  **Classify detections into diel periods**
 
 We can classify each detection as twilight, day, or night using
 periods_day(). This function uses the suncalc package to compute dawn,
@@ -207,7 +224,7 @@ legend("topright", legend=c("P(twilight)","P(daytime)","P(nighttime)"),lwd=8,
        col=c("#A73030FF","#EFC000FF","#0073C2FF"))
 ```
 
-3.  **Generate iNEXT input**
+4.  **Generate iNEXT input**
 
 `input_iNEXT()` prepares incidence or frequency data structures
 compatible with iNEXT:
@@ -249,7 +266,7 @@ out_freq <- iNEXT(inext_freq, q = 0, datatype = "incidence_freq")
 ggiNEXT(out_freq, type = 1)
 ```
 
-4.  **Estimating MNI with assign_MNI_hmm()**
+5.  **Estimating MNI with assign_MNI_hmm()**
 
 If your data include coordinates and you want to estimate a Minimum
 Number of Individuals (MNI) using a space–time model:
@@ -294,20 +311,14 @@ mni_res$`Plot MNI vs α`
 
 ### **Dependencies**
 
--   The package relies on several commonly used R packages, including:
+The package relies on commonly used R packages, including:
 
 -   suncalc – sun times (dawn, sunrise, sunset, dusk)
-
 -   dplyr – data wrangling
-
 -   lubridate – date–time handling
-
 -   ggplot2 – plotting
-
 -   iNEXT – diversity estimation
-
 -   Diel.Niche – diel niche modeling (optional, downstream)
-
 -   Make sure these are listed in DESCRIPTION under Imports or Suggests.
 
 ### Contributing

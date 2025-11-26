@@ -185,7 +185,93 @@ head(ev)
 Here, two detections of the same species at the same station within 1
 hour are treated as belonging to the same event.
 
-2.  **Classify detections into diel periods**
+2.  **Estimate Capture Frequency**
+
+Example 1: All species. The values set for the station_field and
+sampling_effort parameters are not the actual values.
+
+``` r
+fq <- freq_capture(input = datab,
+                   species = NULL,
+                   species_field = "Species",
+                   station_field = "Station",
+                   total_stations = 52,
+                   sampling_effort = 4740,
+                   distance_clean = NULL,
+                   lat = NULL,
+                   long = NULL)
+fq
+#>                     species NRecords NStations Frequency-100 days
+#> 1        Accipiter cooperii        2         1             0.0422
+#> 2       Arremon virenticeps        2         2             0.0422
+#> 3        Atlapetes pileatus        1         1             0.0211
+#> 4       Bassariscus astutus       45         4             0.9494
+#> 5                Bos taurus      518        37            10.9283
+#> 6         Buteo jamaicensis        2         1             0.0422
+#> 7             Canis latrans       75        19             1.5823
+#> 8    Canis lupus familiaris       31         6             0.6540
+#> 9               Catharus sp       41         1             0.8650
+#> 10     Conepatus leuconotus       56        14             1.1814
+#> 11                Cricetido      171        11             3.6076
+#> 12    Cynanthus latirostris        1         1             0.0211
+#> 13     Dasypus novemcinctus       88         8             1.8565
+#> 14      Dendrortyx macroura       44        14             0.9283
+#> 15     Didelphis virginiana      260        31             5.4852
+#> 16           Equus caballus       12         3             0.2532
+#> 17                Geococcyx        1         1             0.0211
+#> 18       Leopardus pardalis       12         3             0.2532
+#> 19               Lynx rufus       29         9             0.6118
+#> 20        Mephitis macroura       57        13             1.2025
+#> 21             Nasua narica       55        12             1.1603
+#> 22   Odocoileus virginianus      119        16             2.5105
+#> 23     Ortalis poliocephala        8         1             0.1688
+#> 24            Pecari tajacu       14         4             0.2954
+#> 25     Pitangus sulphuratus        1         1             0.0211
+#> 26            Procyon lotor       14         5             0.2954
+#> 27            Puma concolor       21         7             0.4430
+#> 28      Sciurus aureogaster      116        24             2.4473
+#> 29   Spilogale angustifrons       21        10             0.4430
+#> 30  Sylvilagus cunicularius       86        16             1.8143
+#> 31    Sylvilagus floridanus       11         6             0.2321
+#> 32            Sylvilagus sp       74         4             1.5612
+#> 33 Urocyon cinereoargenteus        5         4             0.1055
+#>    Frequency modified-100 days
+#> 1                       0.0008
+#> 2                       0.0016
+#> 3                       0.0004
+#> 4                       0.0730
+#> 5                       7.7759
+#> 6                       0.0008
+#> 7                       0.5781
+#> 8                       0.0755
+#> 9                       0.0166
+#> 10                      0.3181
+#> 11                      0.7631
+#> 12                      0.0004
+#> 13                      0.2856
+#> 14                      0.2499
+#> 15                      3.2700
+#> 16                      0.0146
+#> 17                      0.0004
+#> 18                      0.0146
+#> 19                      0.1059
+#> 20                      0.3006
+#> 21                      0.2678
+#> 22                      0.7725
+#> 23                      0.0032
+#> 24                      0.0227
+#> 25                      0.0004
+#> 26                      0.0284
+#> 27                      0.0596
+#> 28                      1.1295
+#> 29                      0.0852
+#> 30                      0.5583
+#> 31                      0.0268
+#> 32                      0.1201
+#> 33                      0.0081
+```
+
+3.  **Classify detections into diel periods**
 
 We can classify each detection as twilight, day, or night using
 periods_day(). This function uses the suncalc package to compute dawn,
@@ -325,11 +411,11 @@ burnin = 500
 #>  Cathemeral (Traditional)
 
 out$bf.table
-#>    Prior  Posterior
-#> D   0.25 0.01458329
-#> N   0.25 0.00000000
-#> CR  0.25 0.00000000
-#> C   0.25 0.98541671
+#>    Prior Posterior
+#> D   0.25         0
+#> N   0.25         0
+#> CR  0.25         0
+#> C   0.25         1
 ```
 
 Plot our parameter chains:
@@ -338,7 +424,7 @@ Plot our parameter chains:
 plot(coda::as.mcmc(out$post.samp.ms.model))
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="60%" />
 
 Posterior probabilities of activity in the three diel periods:
 
@@ -348,7 +434,7 @@ plot_title <- ggplot2::ggtitle("Posterior distributions",
 bayesplot::mcmc_areas(out$post.samp.ms.model, prob = 0.95) + plot_title
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="60%" />
 
 or Using ggplot2:
 
@@ -364,9 +450,9 @@ legend("topright", legend=c("P(twilight)","P(daytime)","P(nighttime)"),lwd=8,
        col=c("#A73030FF","#EFC000FF","#0073C2FF"))
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-16-1.png" width="60%" />
 
-3.  **Generate iNEXT input**
+4.  **Generate iNEXT input**
 
 `input_iNEXT()` prepares incidence or frequency data structures
 compatible with iNEXT:
@@ -391,7 +477,7 @@ out_raw <- iNEXT(inext_raw, q = 0, datatype = "incidence_raw")
 ggiNEXT(out_raw, type = 1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-17-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="60%" />
 
 For a frequency-based representation:
 
@@ -410,9 +496,9 @@ out_freq <- iNEXT(inext_freq, q = 0, datatype = "incidence_freq")
 ggiNEXT(out_freq, type = 1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-18-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-19-1.png" width="60%" />
 
-4.  **Estimating MNI with assign_MNI_hmm()**
+5.  **Estimating MNI with assign_MNI_hmm()**
 
 If your data include coordinates and you want to estimate a Minimum
 Number of Individuals (MNI) using a space–time model:
@@ -502,24 +588,18 @@ the MNI varies with the spatial scale parameter.
 mni_res$`Plot MNI vs α`
 ```
 
-<img src="man/figures/README-unnamed-chunk-23-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-24-1.png" width="60%" />
 
 ### **Dependencies**
 
-- The package relies on several commonly used R packages, including:
+The package relies on commonly used R packages, including:
 
 - suncalc – sun times (dawn, sunrise, sunset, dusk)
-
 - dplyr – data wrangling
-
 - lubridate – date–time handling
-
 - ggplot2 – plotting
-
 - iNEXT – diversity estimation
-
 - Diel.Niche – diel niche modeling (optional, downstream)
-
 - Make sure these are listed in DESCRIPTION under Imports or Suggests.
 
 ### Contributing

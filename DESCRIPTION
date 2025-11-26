@@ -2,8 +2,22 @@ Package: mati
 Title: Tools for Camera-Trap Data Processing and Analysis
 Version: 0.0.1
 Authors@R: 
-    person("Oscar", "Godinez", email = "osctapir@gmail.com", 
-           role = c("aut", "cre"))
+    person(person(given = "Oscar",
+              family = "Godínez-Gómez",
+              role = c("aut", "cre"),
+              email = "connectscape.project@gmail.com",
+              comment = c(ORCID = "0000-0003-3016-739X")
+              ),
+              person(given = "Eduardo",
+              family = "Mendoza",
+              role = c("aut"), 
+              comment = c(ORCID = "0000-0001-6292-0900")
+              ),
+              person(given = "Franceli",
+              family = "Macedo-Santana",
+              role = c("aut")
+              ))
+Maintainer: Oscar Godínez-Gómez <connectscape.project@gmail.com>
 Description: Functions to process camera-trap data, estimate independent events, 
     sampling effort, capture frequency, diel activity periods, and prepare inputs 
     for iNEXT and Diel.Niche.
