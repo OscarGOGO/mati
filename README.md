@@ -29,7 +29,7 @@ You can install the development version from GitHub:
 
 ``` r
 install.packages("remotes")
-remotes::install_github("YOURUSER/fototrampeoTools")
+remotes::install_github("OscarGOGO/mati", dependencies = TRUE, upgrade = "never")
 ```
 
 Then load the package:
@@ -411,11 +411,11 @@ burnin = 500
 #>  Cathemeral (Traditional)
 
 out$bf.table
-#>    Prior Posterior
-#> D   0.25         0
-#> N   0.25         0
-#> CR  0.25         0
-#> C   0.25         1
+#>    Prior  Posterior
+#> D   0.25 0.02115744
+#> N   0.25 0.00000000
+#> CR  0.25 0.00000000
+#> C   0.25 0.97884256
 ```
 
 Plot our parameter chains:

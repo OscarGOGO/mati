@@ -2,7 +2,7 @@
 % Please edit documentation in R/assign_MNI_hmm.R
 \name{assign_MNI_hmm}
 \alias{assign_MNI_hmm}
-\title{Assign a Minimum Number of Individuals (MNI) Using a Space–Time HMM}
+\title{Assign a Minimum Number of Individuals (MNI) Using a Space–Time Hidden Markov Model}
 \usage{
 assign_MNI_hmm(
   data,
@@ -104,22 +104,65 @@ individuals.
 }
 }
 \description{
-\code{assign_MNI_hmm()} assigns detections from camera-trap data to putative
-individuals and estimates the Minimum Number of Individuals (MNI) for a focal
-species. The function uses a discrete-time, discrete-space movement model:
-movement between camera stations is governed by a transition matrix derived
-from inter-station distances and a spatial scale parameter \code{alpha}, while
-temporal dynamics are controlled by the time-step \code{dt}. For each new
-detection, the function compares the probability that it belongs to an
-existing individual against a minimum probability threshold (\code{min_prob});
-detections with low assignment probability are treated as new individuals.
+\code{assign_MNI_hmm()} estimates the Minimum Number of Individuals (MNI) from
+camera-trap detections using a discrete-time, discrete-space \strong{Markov
+movement model}. Camera stations are treated as spatial states, and movement
+probabilities are defined by a distance-based transition matrix controlled by
+the spatial scale parameter \code{alpha}. Temporal separation between detections is
+incorporated through the k-step transition matrix (\code{T^k}), providing a
+space–time probability of moving between stations.
 }
 \details{
-Optionally, a sensitivity analysis can be performed over a vector of \code{alpha}
-values (\code{alpha_sensitivity}). In that case, the function repeatedly
-recomputes the MNI for each \code{alpha} and generates diagnostic plots that
-highlight where the estimator is most sensitive to spatial scale and where
-it begins to saturate.
+Each new detection is assigned to the existing individual with the highest
+transition-based probability, provided it exceeds \code{min_prob}; otherwise, a new
+individual is created. The number of unique assigned IDs yields the \strong{MNI}.
+
+Optionally, the function can evaluate a vector of \code{alpha} values
+(\code{alpha_sensitivity}) and return MNI estimates and diagnostic plots to assess
+sensitivity and saturation with respect to the movement scale.
+
+\strong{Movement model and transition probabilities}
+
+The function relies on a discrete-space, discrete-time \strong{Markov movement
+model}. Each camera station is treated as a state, and movement among
+stations is governed by a spatial transition matrix derived from pairwise
+distances. A commonly used spatial kernel is:
+
+\deqn{P_{\text{esp}}(d_{ij}) = \exp\left(-\frac{d_{ij}}{\alpha}\right)}
+
+where \eqn{d_{ij}} is the distance between stations \eqn{i} and \eqn{j}, and
+\eqn{\alpha} controls the decay rate of movement probability with distance.
+After applying the kernel, rows are normalized to obtain a valid
+\strong{one-step transition matrix} \eqn{T}.
+
+Temporal separation between detections is incorporated under the Markov
+assumption: if two detections are separated by \eqn{k} time-steps of length
+\code{dt}, the relevant transition probability is obtained from the
+\emph{k-step transition matrix}:
+
+\deqn{(T^k)_{ij} = P(S_{t+k} = j \mid S_t = i)}
+
+which provides the joint \strong{space–time probability} of an individual moving
+from the station of its previous detection (\eqn{i}) to the station of the
+current detection (\eqn{j}) after \eqn{k} time steps.
+
+For comparison, the simpler separable model uses independent spatial and
+temporal decay terms:
+
+\deqn{P_{\text{temp}}(\Delta t) = \exp\left(-\frac{\Delta t}{\beta}\right)}
+\deqn{P = P_{\text{esp}}(d_{ij}) \times P_{\text{temp}}(\Delta t)}
+
+but the Markov formulation implemented here uses \eqn{T^k} directly, which
+naturally integrates both distance and time.
+
+\strong{Individual assignment rule}
+
+For each new detection, the probability that it belongs to an existing
+individual is extracted from the corresponding entry of \eqn{T^k}. If the
+maximum probability across all candidates is below \code{min_prob}, the
+detection initializes a new individual; otherwise, it is assigned to the most
+probable existing individual. The final number of individual IDs equals the
+estimated \strong{Minimum Number of Individuals (MNI)}
 }
 \examples{
 \dontrun{

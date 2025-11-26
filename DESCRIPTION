@@ -2,7 +2,7 @@ Package: mati
 Title: Tools for Camera-Trap Data Processing and Analysis
 Version: 0.0.1
 Authors@R: 
-    person(person(given = "Oscar",
+    c(person(given = "Oscar",
               family = "Godínez-Gómez",
               role = c("aut", "cre"),
               email = "connectscape.project@gmail.com",
@@ -10,12 +10,12 @@ Authors@R:
               ),
               person(given = "Eduardo",
               family = "Mendoza",
-              role = c("aut"), 
+              role = "aut", 
               comment = c(ORCID = "0000-0001-6292-0900")
               ),
               person(given = "Franceli",
               family = "Macedo-Santana",
-              role = c("aut")
+              role = "aut"
               ))
 Maintainer: Oscar Godínez-Gómez <connectscape.project@gmail.com>
 Description: Functions to process camera-trap data, estimate independent events, 

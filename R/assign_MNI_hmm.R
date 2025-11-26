@@ -1,20 +1,65 @@
-#' Assign a Minimum Number of Individuals (MNI) Using a Space–Time HMM
+#' Assign a Minimum Number of Individuals (MNI) Using a Space–Time Hidden Markov Model
 #'
-#' `assign_MNI_hmm()` assigns detections from camera-trap data to putative
-#' individuals and estimates the Minimum Number of Individuals (MNI) for a focal
-#' species. The function uses a discrete-time, discrete-space movement model:
-#' movement between camera stations is governed by a transition matrix derived
-#' from inter-station distances and a spatial scale parameter `alpha`, while
-#' temporal dynamics are controlled by the time-step `dt`. For each new
-#' detection, the function compares the probability that it belongs to an
-#' existing individual against a minimum probability threshold (`min_prob`);
-#' detections with low assignment probability are treated as new individuals.
+#' `assign_MNI_hmm()` estimates the Minimum Number of Individuals (MNI) from
+#' camera-trap detections using a discrete-time, discrete-space **Markov
+#' movement model**. Camera stations are treated as spatial states, and movement
+#' probabilities are defined by a distance-based transition matrix controlled by
+#' the spatial scale parameter `alpha`. Temporal separation between detections is
+#' incorporated through the k-step transition matrix (`T^k`), providing a
+#' space–time probability of moving between stations.
 #'
-#' Optionally, a sensitivity analysis can be performed over a vector of `alpha`
-#' values (`alpha_sensitivity`). In that case, the function repeatedly
-#' recomputes the MNI for each `alpha` and generates diagnostic plots that
-#' highlight where the estimator is most sensitive to spatial scale and where
-#' it begins to saturate.
+#' Each new detection is assigned to the existing individual with the highest
+#' transition-based probability, provided it exceeds `min_prob`; otherwise, a new
+#' individual is created. The number of unique assigned IDs yields the **MNI**.
+#'
+#' Optionally, the function can evaluate a vector of `alpha` values
+#' (`alpha_sensitivity`) and return MNI estimates and diagnostic plots to assess
+#' sensitivity and saturation with respect to the movement scale.
+
+#'
+#' @details
+#' **Movement model and transition probabilities**
+#'
+#' The function relies on a discrete-space, discrete-time **Markov movement
+#' model**. Each camera station is treated as a state, and movement among
+#' stations is governed by a spatial transition matrix derived from pairwise
+#' distances. A commonly used spatial kernel is:
+#'
+#' \deqn{P_{\text{esp}}(d_{ij}) = \exp\left(-\frac{d_{ij}}{\alpha}\right)}
+#'
+#' where \eqn{d_{ij}} is the distance between stations \eqn{i} and \eqn{j}, and
+#' \eqn{\alpha} controls the decay rate of movement probability with distance.
+#' After applying the kernel, rows are normalized to obtain a valid
+#' **one-step transition matrix** \eqn{T}.
+#'
+#' Temporal separation between detections is incorporated under the Markov
+#' assumption: if two detections are separated by \eqn{k} time-steps of length
+#' \code{dt}, the relevant transition probability is obtained from the
+#' \emph{k-step transition matrix}:
+#'
+#' \deqn{(T^k)_{ij} = P(S_{t+k} = j \mid S_t = i)}
+#'
+#' which provides the joint **space–time probability** of an individual moving
+#' from the station of its previous detection (\eqn{i}) to the station of the
+#' current detection (\eqn{j}) after \eqn{k} time steps.
+#'
+#' For comparison, the simpler separable model uses independent spatial and
+#' temporal decay terms:
+#'
+#' \deqn{P_{\text{temp}}(\Delta t) = \exp\left(-\frac{\Delta t}{\beta}\right)}
+#' \deqn{P = P_{\text{esp}}(d_{ij}) \times P_{\text{temp}}(\Delta t)}
+#'
+#' but the Markov formulation implemented here uses \eqn{T^k} directly, which
+#' naturally integrates both distance and time.
+#'
+#' **Individual assignment rule**
+#'
+#' For each new detection, the probability that it belongs to an existing
+#' individual is extracted from the corresponding entry of \eqn{T^k}. If the
+#' maximum probability across all candidates is below \code{min_prob}, the
+#' detection initializes a new individual; otherwise, it is assigned to the most
+#' probable existing individual. The final number of individual IDs equals the
+#' estimated **Minimum Number of Individuals (MNI)**
 #'
 #' @param data `data.frame`. Table containing the camera-trap records.
 #'
@@ -138,7 +183,6 @@
 #' }
 #' @importFrom sf st_as_sf st_transform st_distance
 #' @importFrom ggplot2 ggplot geom_point geom_smooth geom_line geom_vline geom_label labs aes theme_minimal
-#' @importFrom dplyr arrange mutate filter slice_max slice_min %>%
 #' @importFrom expm %^%
 #' @import patchwork
 #' @export
@@ -280,6 +324,7 @@ assign_MNI_hmm <- function(data,
       idx_last <- cam_index[[as.character(cam_last)]]
 
       # prob. de pasar de cámara última de ese individuo a cámara actual en k pasos
+
       P_vec[ii] <- Tk[idx_last, idx_cam_r]
     }
 
@@ -312,6 +357,8 @@ assign_MNI_hmm <- function(data,
                     alpha       = alpha,
                     dt          = dt,
                     min_prob    = min_prob)
+  df$prob_last_ind <- round(df$prob_last_ind, 6)
+  df$prob_new_ind <- round(df$prob_new_ind, 6)
   result <- list(data_with_ids = df, MNI = MNI)
 
   if(!is.null(alpha_sensitivity)){
@@ -343,30 +390,24 @@ assign_MNI_hmm <- function(data,
         y = "MNI"
       )
 
-    df_mni2 <- MNI2 %>%
-      arrange(alpha) %>%
-      mutate(
-        dMNI      = MNI - lag(MNI),                  # cambio en MNI
-        dAlpha    = alpha - lag(alpha),              # cambio en alpha
-        slope     = dMNI / dAlpha                    # pendiente aproximada
-      )
+    MNI2$dMNI <- c(NA, MNI2$MNI[2:nrow(MNI2)] -  MNI2$MNI[1:(nrow(MNI2)-1)])
+    MNI2$dAlpha <- c(NA, MNI2$alpha[2:nrow(MNI2)] -  MNI2$alpha[1:(nrow(MNI2)-1)])
+    MNI2$slope <- MNI2$dMNI/MNI2$dAlpha
 
     # quitar primer NA
-    df_mni_valid <- df_mni2 %>% filter(!is.na(.data$slope))
+    df_mni_valid <- MNI2[-which(is.na(MNI2$slope)),]
 
     # 1) punto de máxima pendiente (cambio más fuerte)
-    max_change_point <- df_mni_valid %>%
-      slice_max(.data$slope, n = 1)
+    max_change_point <- df_mni_valid[which.max(df_mni_valid$slope),]
 
     # 2) punto de saturación aproximado:
     # primer alpha donde la pendiente cae por debajo de un umbral pequeño
     threshold <- 0.0005
 
-    saturation_point <- df_mni_valid %>%
-      filter(.data$slope <= threshold) %>%
-      slice_min(alpha, n = 1)
+    saturation_point <- df_mni_valid[which(df_mni_valid$slope <= threshold),]
+    saturation_point <- saturation_point[which.min(df_mni_valid$slope),]
 
-    p2 <- ggplot(df_mni2, aes(x = alpha, y = MNI)) +
+    p2 <- ggplot(MNI2, aes(x = alpha, y = MNI)) +
       geom_line(linewidth = 1) +
       geom_point(size = 2) +
       # línea vertical en el punto de mayor cambio
