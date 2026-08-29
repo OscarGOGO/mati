@@ -39,7 +39,7 @@ including the date, time, and tags.
 \examples{
 \dontrun{
 #Carpeta con subcarpetas
-test <- video_meta_table(folderpath = "D:/Camaras_trampaR/Videos_prueba2", 
+test <- video_meta_table(folderpath = "D:/Camaras_trampaR/Videos_prueba2",
                          tags = "TagsList",
                          date_field = "MetadataDate",
                          date_format = "\%Y:\%m:\%d \%H:\%M:\%S",
