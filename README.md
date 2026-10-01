@@ -32,6 +32,16 @@ install.packages("remotes")
 remotes::install_github("OscarGOGO/mati", dependencies = TRUE, upgrade = "never")
 ```
 
+ℹ In devtools 2.5.0. Please use pak::pak(“user/repo”) instead
+
+``` r
+install.packages("pak")
+```
+
+``` r
+pak::pak("OscarGOGO/mati", dependencies = TRUE, upgrade = FALSE)
+```
+
 Then load the package:
 
 ``` r
@@ -49,6 +59,8 @@ library(mati)
 - `input_iNEXT()` – generate incidence or frequency data structures for
   iNEXT.
 
+- `records_map()` – map camera-trap records by sampling station.
+
 - `capture_frequency()` (or equivalent) – compute standardized capture
   frequencies.
 
@@ -63,53 +75,51 @@ In this example we assume you have a camera-trap dataset like:
 
 ``` r
 datab <- read.csv("sipecam_final.csv", header = TRUE)
+head(datab)
 ```
 
-``` r
-head(datab)
-#>     ID             Carpeta Integridad Station Latitud  Longitud Comunidad
-#> 1  436    1_81_1_1499_9785       alta 1499_02 19.4239 -102.1985       NSJ
-#> 2  913    1_81_1_1499_9785       alta 1499_02 19.4239 -102.1985       NSJ
-#> 3  702    1_81_0_1501_8996      media 1501_01 19.4340 -102.3632      EApo
-#> 4  414    1_81_1_1499_9785       alta 1499_02 19.4239 -102.1985       NSJ
-#> 5  809    1_81_0_1504_9802      media 1504_03 19.3625 -102.2949 Tancitaro
-#> 6 1147 M2_1_81_0_1119_9183      media 1119_01 19.3828 -102.2486       NSJ
-#>   Muestreo             Species     ncomun    grupo carnivoro DateTimeOriginal
-#> 1    Secas  Accipiter cooperii        ave      Ave        no  7/02/2022 13:22
-#> 2    Secas  Accipiter cooperii        ave      Ave        no  7/02/2022 13:22
-#> 3    Secas Arremon virenticeps        ave      Ave        no 29/01/2022 15:22
-#> 4    Secas Arremon virenticeps        ave      Ave        no 22/01/2022 16:53
-#> 5  Lluvias  Atlapetes pileatus        ave      Ave        no 23/06/2022 10:44
-#> 6  Lluvias Bassariscus astutus Cacomixtle Mamifero        si 11/09/2022 21:31
-#>         Date     Time delta.time.secs delta.time.mins delta.time.hours
-#> 1  7/02/2022 13:22:38           24171           402.9              6.7
-#> 2  7/02/2022 13:22:38          415922          6932.0            115.5
-#> 3 29/01/2022 15:22:34          530591          8843.2            147.4
-#> 4 22/01/2022 16:53:31          110749          1845.8             30.8
-#> 5 23/06/2022 10:44:19               0             0.0              0.0
-#> 6 11/09/2022 21:31:31               0             0.0              0.0
-#>   delta.time.days Individuos
-#> 1             0.3          1
-#> 2             4.8          1
-#> 3             6.1          1
-#> 4             1.3          1
-#> 5             0.0          1
-#> 6             0.0         NA
-#>                                                         Directory
-#> 1    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1499_9785
-#> 2    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1499_9785
-#> 3    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1501_8996
-#> 4    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1499_9785
-#> 5    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1504_9802
-#> 6 C:/Users/45036829/Documents/SIPECAM/renamed/M2_1_81_0_1119_9183
-#>                                               FileName
-#> 1        1_81_1_1499_9785__2022-02-07__13-22-38(1).JPG
-#> 2        1_81_1_1499_9785__2022-02-07__13-22-38(1).JPG
-#> 3        1_81_0_1501_8996__2022-01-29__15-22-34(1).JPG
-#> 4        1_81_1_1499_9785__2022-01-22__16-53-31(1).JPG
-#> 5        1_81_0_1504_9802__2022-06-23__10-44-19(1).JPG
-#> 6 M2_1_81_0_1119_9183-TAG__2022-09-11__21-31-31(1).JPG
-```
+    #>     ID             Carpeta Integridad Station Latitud  Longitud Comunidad
+    #> 1  436    1_81_1_1499_9785       alta 1499_02 19.4239 -102.1985       NSJ
+    #> 2  913    1_81_1_1499_9785       alta 1499_02 19.4239 -102.1985       NSJ
+    #> 3  702    1_81_0_1501_8996      media 1501_01 19.4340 -102.3632      EApo
+    #> 4  414    1_81_1_1499_9785       alta 1499_02 19.4239 -102.1985       NSJ
+    #> 5  809    1_81_0_1504_9802      media 1504_03 19.3625 -102.2949 Tancitaro
+    #> 6 1147 M2_1_81_0_1119_9183      media 1119_01 19.3828 -102.2486       NSJ
+    #>   Muestreo             Species     ncomun    grupo carnivoro DateTimeOriginal
+    #> 1    Secas  Accipiter cooperii        ave      Ave        no  7/02/2022 13:22
+    #> 2    Secas  Accipiter cooperii        ave      Ave        no  7/02/2022 13:22
+    #> 3    Secas Arremon virenticeps        ave      Ave        no 29/01/2022 15:22
+    #> 4    Secas Arremon virenticeps        ave      Ave        no 22/01/2022 16:53
+    #> 5  Lluvias  Atlapetes pileatus        ave      Ave        no 23/06/2022 10:44
+    #> 6  Lluvias Bassariscus astutus Cacomixtle Mamifero        si 11/09/2022 21:31
+    #>         Date     Time delta.time.secs delta.time.mins delta.time.hours
+    #> 1  7/02/2022 13:22:38           24171           402.9              6.7
+    #> 2  7/02/2022 13:22:38          415922          6932.0            115.5
+    #> 3 29/01/2022 15:22:34          530591          8843.2            147.4
+    #> 4 22/01/2022 16:53:31          110749          1845.8             30.8
+    #> 5 23/06/2022 10:44:19               0             0.0              0.0
+    #> 6 11/09/2022 21:31:31               0             0.0              0.0
+    #>   delta.time.days Individuos
+    #> 1             0.3          1
+    #> 2             4.8          1
+    #> 3             6.1          1
+    #> 4             1.3          1
+    #> 5             0.0          1
+    #> 6             0.0         NA
+    #>                                                         Directory
+    #> 1    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1499_9785
+    #> 2    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1499_9785
+    #> 3    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1501_8996
+    #> 4    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1499_9785
+    #> 5    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1504_9802
+    #> 6 C:/Users/45036829/Documents/SIPECAM/renamed/M2_1_81_0_1119_9183
+    #>                                               FileName
+    #> 1        1_81_1_1499_9785__2022-02-07__13-22-38(1).JPG
+    #> 2        1_81_1_1499_9785__2022-02-07__13-22-38(1).JPG
+    #> 3        1_81_0_1501_8996__2022-01-29__15-22-34(1).JPG
+    #> 4        1_81_1_1499_9785__2022-01-22__16-53-31(1).JPG
+    #> 5        1_81_0_1504_9802__2022-06-23__10-44-19(1).JPG
+    #> 6 M2_1_81_0_1119_9183-TAG__2022-09-11__21-31-31(1).JPG
 
 **Typical columns:**
 
@@ -126,17 +136,13 @@ head(datab)
 1.  **Identify independent events**
 
 ``` r
-ev <- event_independ(
-input = datab,
-station_field = "Station",
-species_field = "Species",
-date_field = "Date",
-date_format = "%d/%m/%Y",
-time_field = "Time",
-independent_time = 1,
-independent_units = "hours"
-)
-
+ev <- event_independ(input = datab, station_field = "Station",
+                     species_field = "Species",
+                     date_field = "Date",
+                     date_format = "%d/%m/%Y",
+                     time_field = "Time",
+                     independent_time = 1,
+                     independent_units = "hours")
 head(ev)
 #>     ID             Carpeta Integridad Station Latitud  Longitud Comunidad
 #> 1 1147 M2_1_81_0_1119_9183      media 1119_01 19.3828 -102.2486       NSJ
@@ -191,7 +197,7 @@ Example 1: All species. The values set for the station_field and
 sampling_effort parameters are not the actual values.
 
 ``` r
-fq <- freq_capture(input = datab,
+fq <- freq_capture(input = ev,
                    species = NULL,
                    species_field = "Species",
                    station_field = "Station",
@@ -202,148 +208,127 @@ fq <- freq_capture(input = datab,
                    long = NULL)
 fq
 #>                     species NRecords NStations Frequency-100 days
-#> 1        Accipiter cooperii        2         1             0.0422
-#> 2       Arremon virenticeps        2         2             0.0422
-#> 3        Atlapetes pileatus        1         1             0.0211
-#> 4       Bassariscus astutus       45         4             0.9494
-#> 5                Bos taurus      518        37            10.9283
-#> 6         Buteo jamaicensis        2         1             0.0422
-#> 7             Canis latrans       75        19             1.5823
-#> 8    Canis lupus familiaris       31         6             0.6540
-#> 9               Catharus sp       41         1             0.8650
-#> 10     Conepatus leuconotus       56        14             1.1814
-#> 11                Cricetido      171        11             3.6076
-#> 12    Cynanthus latirostris        1         1             0.0211
-#> 13     Dasypus novemcinctus       88         8             1.8565
-#> 14      Dendrortyx macroura       44        14             0.9283
-#> 15     Didelphis virginiana      260        31             5.4852
-#> 16           Equus caballus       12         3             0.2532
-#> 17                Geococcyx        1         1             0.0211
-#> 18       Leopardus pardalis       12         3             0.2532
-#> 19               Lynx rufus       29         9             0.6118
-#> 20        Mephitis macroura       57        13             1.2025
-#> 21             Nasua narica       55        12             1.1603
-#> 22   Odocoileus virginianus      119        16             2.5105
-#> 23     Ortalis poliocephala        8         1             0.1688
-#> 24            Pecari tajacu       14         4             0.2954
-#> 25     Pitangus sulphuratus        1         1             0.0211
-#> 26            Procyon lotor       14         5             0.2954
-#> 27            Puma concolor       21         7             0.4430
-#> 28      Sciurus aureogaster      116        24             2.4473
-#> 29   Spilogale angustifrons       21        10             0.4430
-#> 30  Sylvilagus cunicularius       86        16             1.8143
-#> 31    Sylvilagus floridanus       11         6             0.2321
-#> 32            Sylvilagus sp       74         4             1.5612
-#> 33 Urocyon cinereoargenteus        5         4             0.1055
+#> 1       Bassariscus astutus       22         4             0.4641
+#> 2                Bos taurus      196        37             4.1350
+#> 3      Didelphis virginiana      186        31             3.9241
+#> 4         Mephitis macroura       34        13             0.7173
+#> 5              Nasua narica       28        12             0.5907
+#> 6    Odocoileus virginianus       46        16             0.9705
+#> 7   Sylvilagus cunicularius       61        16             1.2869
+#> 8  Urocyon cinereoargenteus        5         4             0.1055
+#> 9         Buteo jamaicensis        1         1             0.0211
+#> 10     Conepatus leuconotus       31        14             0.6540
+#> 11            Procyon lotor        7         5             0.1477
+#> 12            Canis latrans       45        19             0.9494
+#> 13   Canis lupus familiaris        9         6             0.1899
+#> 14     Dasypus novemcinctus       36         8             0.7595
+#> 15      Sciurus aureogaster       76        24             1.6034
+#> 16               Lynx rufus       17         9             0.3586
+#> 17   Spilogale angustifrons       16        10             0.3376
+#> 18      Dendrortyx macroura       39        14             0.8228
+#> 19           Equus caballus       11         3             0.2321
+#> 20                Geococcyx        1         1             0.0211
+#> 21                Cricetido      138        11             2.9114
+#> 22            Puma concolor       12         7             0.2532
+#> 23    Sylvilagus floridanus       11         6             0.2321
+#> 24       Accipiter cooperii        1         1             0.0211
+#> 25      Arremon virenticeps        2         2             0.0422
+#> 26              Catharus sp       32         1             0.6751
+#> 27            Sylvilagus sp       17         4             0.3586
+#> 28    Cynanthus latirostris        1         1             0.0211
+#> 29       Leopardus pardalis        9         3             0.1899
+#> 30     Pitangus sulphuratus        1         1             0.0211
+#> 31            Pecari tajacu        8         4             0.1688
+#> 32     Ortalis poliocephala        1         1             0.0211
+#> 33       Atlapetes pileatus        1         1             0.0211
 #>    Frequency modified-100 days
-#> 1                       0.0008
-#> 2                       0.0016
-#> 3                       0.0004
-#> 4                       0.0730
-#> 5                       7.7759
-#> 6                       0.0008
-#> 7                       0.5781
-#> 8                       0.0755
-#> 9                       0.0166
-#> 10                      0.3181
-#> 11                      0.7631
-#> 12                      0.0004
-#> 13                      0.2856
-#> 14                      0.2499
-#> 15                      3.2700
-#> 16                      0.0146
-#> 17                      0.0004
-#> 18                      0.0146
-#> 19                      0.1059
-#> 20                      0.3006
-#> 21                      0.2678
-#> 22                      0.7725
-#> 23                      0.0032
-#> 24                      0.0227
-#> 25                      0.0004
-#> 26                      0.0284
-#> 27                      0.0596
-#> 28                      1.1295
-#> 29                      0.0852
-#> 30                      0.5583
-#> 31                      0.0268
-#> 32                      0.1201
-#> 33                      0.0081
+#> 1                       0.0357
+#> 2                       2.9422
+#> 3                       2.3393
+#> 4                       0.1793
+#> 5                       0.1363
+#> 6                       0.2986
+#> 7                       0.3960
+#> 8                       0.0081
+#> 9                       0.0004
+#> 10                      0.1761
+#> 11                      0.0142
+#> 12                      0.3469
+#> 13                      0.0219
+#> 14                      0.1168
+#> 15                      0.7400
+#> 16                      0.0621
+#> 17                      0.0649
+#> 18                      0.2215
+#> 19                      0.0134
+#> 20                      0.0004
+#> 21                      0.6159
+#> 22                      0.0341
+#> 23                      0.0268
+#> 24                      0.0004
+#> 25                      0.0016
+#> 26                      0.0130
+#> 27                      0.0276
+#> 28                      0.0004
+#> 29                      0.0110
+#> 30                      0.0004
+#> 31                      0.0130
+#> 32                      0.0004
+#> 33                      0.0004
 ```
 
-3.  **Classify detections into diel periods**
+3.  **Map camera-trap records by sampling station**
+
+Example 1: The map shows the number of camera-trap records at each
+sampling station for *Puma concolor*. Point size represents the number
+of records, while point color distinguishes stations with and without
+detections. All sampling stations are retained, including stations where
+the selected species was not detected.
+
+``` r
+library(sf)
+
+maps <- records_map(
+  data = ev,
+  station_field = "Station",
+  species_field = "Species",
+  species_filter = "Puma concolor",
+  lat = "Latitud",
+  long = "Longitud"
+)
+```
+
+<img src="man/figures/README-unnamed-chunk-11-1.png" alt="" width="60%" />
+
+4.  **Classify detections into diel periods**
 
 We can classify each detection as twilight, day, or night using
 periods_day(). This function uses the suncalc package to compute dawn,
 sunrise, sunset, and dusk from dates and coordinates.
 
 ``` r
-pd <- periods_day(
-input = ev,
-species_field = "Species",
-date_field = "Date",
-date_format = "%d/%m/%Y",
-time_field = "Time",
-tz = "America/Mexico_City",
-lat = "Latitud",
-long = "Longitud"
-)
+pd <- periods_day(input = ev, 
+                  species_field = "Species",
+                  date_field = "Date",
+                  date_format = "%d/%m/%Y",
+                  time_field = "Time",
+                  tz = "America/Mexico_City",
+                  lat = "Latitud",
+                  long = "Longitud")
 #>   |                                                                              |                                                                      |   0%  |                                                                              |==                                                                    |   3%  |                                                                              |====                                                                  |   6%  |                                                                              |======                                                                |   9%  |                                                                              |========                                                              |  12%  |                                                                              |===========                                                           |  15%  |                                                                              |=============                                                         |  18%  |                                                                              |===============                                                       |  21%  |                                                                              |=================                                                     |  24%  |                                                                              |===================                                                   |  27%  |                                                                              |=====================                                                 |  30%  |                                                                              |=======================                                               |  33%  |                                                                              |=========================                                             |  36%  |                                                                              |============================                                          |  39%  |                                                                              |==============================                                        |  42%  |                                                                              |================================                                      |  45%  |                                                                              |==================================                                    |  48%  |                                                                              |====================================                                  |  52%  |                                                                              |======================================                                |  55%  |                                                                              |========================================                              |  58%  |                                                                              |==========================================                            |  61%  |                                                                              |=============================================                         |  64%  |                                                                              |===============================================                       |  67%  |                                                                              |=================================================                     |  70%  |                                                                              |===================================================                   |  73%  |                                                                              |=====================================================                 |  76%  |                                                                              |=======================================================               |  79%  |                                                                              |=========================================================             |  82%  |                                                                              |===========================================================           |  85%  |                                                                              |==============================================================        |  88%  |                                                                              |================================================================      |  91%  |                                                                              |==================================================================    |  94%  |                                                                              |====================================================================  |  97%  |                                                                              |======================================================================| 100%
 ```
 
 Raw table with new columns Period and Time_period
 
 ``` r
-head(pd$raw_table)
-#>        ID             Carpeta Integridad Station Latitud  Longitud Comunidad
-#> 509   436    1_81_1_1499_9785       alta 1499_02 19.4239 -102.1985       NSJ
-#> 510   414    1_81_1_1499_9785       alta 1499_02 19.4239 -102.1985       NSJ
-#> 734   702    1_81_0_1501_8996      media 1501_01 19.4340 -102.3632      EApo
-#> 1042  809    1_81_0_1504_9802      media 1504_03 19.3625 -102.2949 Tancitaro
-#> 1    1147 M2_1_81_0_1119_9183      media 1119_01 19.3828 -102.2486       NSJ
-#> 44     90    1_81_0_1119_8996      media 1119_02 19.3828 -102.2450       NSJ
-#>      Muestreo             Species     ncomun    grupo carnivoro
-#> 509     Secas  Accipiter cooperii        ave      Ave        no
-#> 510     Secas Arremon virenticeps        ave      Ave        no
-#> 734     Secas Arremon virenticeps        ave      Ave        no
-#> 1042  Lluvias  Atlapetes pileatus        ave      Ave        no
-#> 1     Lluvias Bassariscus astutus Cacomixtle Mamifero        si
-#> 44      Secas Bassariscus astutus Cacomixtle Mamifero        si
-#>      DateTimeOriginal       Date     Time delta.time.secs delta.time.mins
-#> 509   7/02/2022 13:22 07/02/2022 13:22:38           24171           402.9
-#> 510  22/01/2022 16:53 22/01/2022 16:53:31          110749          1845.8
-#> 734  29/01/2022 15:22 29/01/2022 15:22:34          530591          8843.2
-#> 1042 23/06/2022 10:44 23/06/2022 10:44:19               0             0.0
-#> 1    11/09/2022 21:31 11/09/2022 21:31:31               0             0.0
-#> 44   28/11/2021 20:41 28/11/2021 20:41:06               0             0.0
-#>      delta.time.hours delta.time.days Individuos
-#> 509               6.7             0.3          1
-#> 510              30.8             1.3          1
-#> 734             147.4             6.1          1
-#> 1042              0.0             0.0          1
-#> 1                 0.0             0.0         NA
-#> 44                0.0             0.0         NA
-#>                                                            Directory
-#> 509     C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1499_9785
-#> 510     C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1499_9785
-#> 734     C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1501_8996
-#> 1042    C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1504_9802
-#> 1    C:/Users/45036829/Documents/SIPECAM/renamed/M2_1_81_0_1119_9183
-#> 44      C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1119_8996
-#>                                                  FileName Period
-#> 509         1_81_1_1499_9785__2022-02-07__13-22-38(1).JPG    day
-#> 510         1_81_1_1499_9785__2022-01-22__16-53-31(1).JPG    day
-#> 734         1_81_0_1501_8996__2022-01-29__15-22-34(1).JPG    day
-#> 1042        1_81_0_1504_9802__2022-06-23__10-44-19(1).JPG    day
-#> 1    M2_1_81_0_1119_9183-TAG__2022-09-11__21-31-31(1).JPG  night
-#> 44          1_81_0_1119_8996__2021-11-28__20-41-06(1).JPG  night
-#>                  Time_period
-#> 509  Between 07:22 and 18:45
-#> 510  Between 07:26 and 18:36
-#> 734  Between 07:26 and 18:41
-#> 1042 Between 07:13 and 20:31
-#> 1    Between 20:18 and 07:15
-#> 44   Between 18:34 and 06:42
+head(pd$raw_table[,c("ID", "Species", "Period", "Time_period")])
+#>        ID             Species Period             Time_period
+#> 509   436  Accipiter cooperii    day Between 07:22 and 18:45
+#> 510   414 Arremon virenticeps    day Between 07:26 and 18:36
+#> 734   702 Arremon virenticeps    day Between 07:26 and 18:41
+#> 1042  809  Atlapetes pileatus    day Between 07:13 and 20:31
+#> 1    1147 Bassariscus astutus  night Between 20:18 and 07:15
+#> 44     90 Bassariscus astutus  night Between 18:34 and 06:42
 ```
 
 Counts of detections per species and period (twilight, day, night)
@@ -399,23 +384,20 @@ Example for one species:
 ``` r
 y <- as.matrix(pd$period_table["Odocoileus virginianus", ])
 
-out <- diel.fit(
-y = y,
-hyp.set = hyp.sets("Traditional"),
-post.fit = TRUE,
-n.chains = 3,
-n.mcmc = 3000,
-burnin = 500
-)
+out <- diel.fit(y = y, hyp.set = hyp.sets("Traditional"),
+                post.fit = TRUE,
+                n.chains = 3,
+                n.mcmc = 3000,
+                burnin = 500)
 #> The most supported model is: 
 #>  Cathemeral (Traditional)
 
 out$bf.table
-#>    Prior  Posterior
-#> D   0.25 0.02447072
-#> N   0.25 0.00000000
-#> CR  0.25 0.00000000
-#> C   0.25 0.97552928
+#>    Prior   Posterior
+#> D   0.25 0.007111958
+#> N   0.25 0.000000000
+#> CR  0.25 0.000000000
+#> C   0.25 0.992888042
 ```
 
 Plot our parameter chains:
@@ -424,7 +406,7 @@ Plot our parameter chains:
 plot(coda::as.mcmc(out$post.samp.ms.model))
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-17-1.png" alt="" width="60%" />
 
 Posterior probabilities of activity in the three diel periods:
 
@@ -434,7 +416,7 @@ plot_title <- ggplot2::ggtitle("Posterior distributions",
 bayesplot::mcmc_areas(out$post.samp.ms.model, prob = 0.95) + plot_title
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-18-1.png" alt="" width="60%" />
 
 or Using ggplot2:
 
@@ -450,9 +432,9 @@ legend("topright", legend=c("P(twilight)","P(daytime)","P(nighttime)"),lwd=8,
        col=c("#A73030FF","#EFC000FF","#0073C2FF"))
 ```
 
-<img src="man/figures/README-unnamed-chunk-16-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-19-1.png" alt="" width="60%" />
 
-4.  **Generate iNEXT input**
+5.  **Generate iNEXT input**
 
 `input_iNEXT()` prepares incidence or frequency data structures
 compatible with iNEXT:
@@ -464,62 +446,56 @@ library(iNEXT)
 Incidence raw format (presence/absence by sampling unit, effort = days)
 
 ``` r
-inext_raw <- input_iNEXT(
-input = datab,
-effort = "days",
-species_field = "Species",
-date_field = "Date",
-date_format = "%d/%m/%Y",
-type = "raw"
-)
+inext_raw <- input_iNEXT(input = datab,
+                         effort = "days",
+                         species_field = "Species",
+                         date_field = "Date",
+                         date_format = "%d/%m/%Y",
+                         type = "raw")
 
 out_raw <- iNEXT(inext_raw, q = 0, datatype = "incidence_raw")
 ggiNEXT(out_raw, type = 1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-18-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-21-1.png" alt="" width="60%" />
 
 For a frequency-based representation:
 
 ``` r
-inext_freq <- input_iNEXT(
-input = datab,
-effort = "days",
-species_field = "Species",
-assemblages = "Muestreo", # e.g. sampling season/category
-date_field = "Date",
-date_format = "%d/%m/%Y",
-type = "frequency"
-)
+inext_freq <- input_iNEXT(input = datab,
+                          effort = "days",
+                          species_field = "Species",
+                          assemblages = "Muestreo", 
+                          date_field = "Date",
+                          date_format = "%d/%m/%Y",
+                          type = "frequency")
 
 out_freq <- iNEXT(inext_freq, q = 0, datatype = "incidence_freq")
 ggiNEXT(out_freq, type = 1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-19-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-22-1.png" alt="" width="60%" />
 
-5.  **Estimating MNI with assign_MNI_hmm()**
+6.  **Estimating MNI with assign_MNI_hmm()**
 
 If your data include coordinates and you want to estimate a Minimum
 Number of Individuals (MNI) using a space–time model:
 
 ``` r
-mni_res <- assign_MNI_hmm(
-data = ev,
-station_field = "Station",
-species_col = "Species",
-date_field = "Date",
-date_format = "%d/%m/%Y",
-time_field = "Time",
-tz = "UTC",
-species_filter = "Odocoileus virginianus",
-lat = "Latitud",
-long = "Longitud",
-alpha = 300, # spatial scale (m)
-dt = 1, # time step (hours)
-alpha_sensitivity = seq(200, 10000, 200), # optional sensitivity analysis
-min_prob = 0.5
-)
+mni_res <- assign_MNI_hmm(data = ev,
+                          station_field = "Station",
+                          species_col = "Species",
+                          date_field = "Date",
+                          date_format = "%d/%m/%Y",
+                          time_field = "Time",
+                          tz = "UTC",
+                          species_filter = "Odocoileus virginianus",
+                          lat = "Latitud",
+                          long = "Longitud",
+                          alpha = 300, # spatial scale (m)
+                          dt = 1, # time step (hours)
+                          alpha_sensitivity = seq(200, 10000, 200), # optional sensitivity analysis
+                          min_prob = 0.5)
 ```
 
 ``` r
@@ -530,27 +506,55 @@ mni_res$MNI
 
 ``` r
 head(mni_res$data_with_ids)
-#>        ID          Carpeta Integridad Station Latitud  Longitud
-#> 901   764 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291
-#> 721  1964 1_81_1_1500_9862       alta 1500_05 19.4493 -102.2333
-#> 702   490 1_81_1_1500_9617       alta 1500_04 19.4470 -102.2357
-#> 902   776 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291
-#> 903   784 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291
-#> 1018  173 1_81_0_1503_0058      media 1503_05 19.4070 -102.4233
-#>                     Species       Date                Time Individuos indiv_id
-#> 901  Odocoileus virginianus 14/12/2021 2021-12-14 18:46:34          1        1
-#> 721  Odocoileus virginianus 20/12/2021 2021-12-20 18:25:32          1        2
-#> 702  Odocoileus virginianus 24/12/2021 2021-12-24 09:36:01          1        3
-#> 902  Odocoileus virginianus 27/12/2021 2021-12-27 09:44:29          1        4
-#> 903  Odocoileus virginianus 27/12/2021 2021-12-27 19:33:57          1        4
-#> 1018 Odocoileus virginianus 07/01/2022 2022-01-07 09:06:20          1        5
-#>      prob_last_ind prob_new_ind
-#> 901       1.000000     1.000000
-#> 721       0.000000     1.000000
-#> 702       0.219574     0.780426
-#> 902       0.500000     0.500000
-#> 903       0.551718     0.448282
-#> 1018      0.500000     0.500000
+#>        ID          Carpeta Integridad Station Latitud  Longitud Comunidad
+#> 901   764 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291 Tancitaro
+#> 721  1964 1_81_1_1500_9862       alta 1500_05 19.4493 -102.2333       NSJ
+#> 702   490 1_81_1_1500_9617       alta 1500_04 19.4470 -102.2357       NSJ
+#> 902   776 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291 Tancitaro
+#> 903   784 1_81_0_1503_9381      media 1503_01 19.4079 -102.4291 Tancitaro
+#> 1018  173 1_81_0_1503_0058      media 1503_05 19.4070 -102.4233 Tancitaro
+#>      Muestreo                Species ncomun    grupo carnivoro DateTimeOriginal
+#> 901     Secas Odocoileus virginianus Venado Mamifero           14/12/2021 18:46
+#> 721     Secas Odocoileus virginianus Venado Mamifero           20/12/2021 18:25
+#> 702     Secas Odocoileus virginianus Venado Mamifero            24/12/2021 9:36
+#> 902     Secas Odocoileus virginianus Venado Mamifero            27/12/2021 9:44
+#> 903     Secas Odocoileus virginianus Venado Mamifero           27/12/2021 19:33
+#> 1018    Secas Odocoileus virginianus Venado Mamifero             7/01/2022 9:06
+#>            Date                Time delta.time.secs delta.time.mins
+#> 901  14/12/2021 2021-12-14 18:46:34               0             0.0
+#> 721  20/12/2021 2021-12-20 18:25:32               0             0.0
+#> 702  24/12/2021 2021-12-24 09:36:01               0             0.0
+#> 902  27/12/2021 2021-12-27 09:44:29          122046          2034.1
+#> 903  27/12/2021 2021-12-27 19:33:57              16             0.3
+#> 1018 07/01/2022 2022-01-07 09:06:20               0             0.0
+#>      delta.time.hours delta.time.days Individuos
+#> 901               0.0             0.0         NA
+#> 721               0.0             0.0         NA
+#> 702               0.0             0.0         NA
+#> 902              33.9             1.4         NA
+#> 903               0.0             0.0         NA
+#> 1018              0.0             0.0         NA
+#>                                                         Directory
+#> 901  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1503_9381
+#> 721  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1500_9862
+#> 702  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_1_1500_9617
+#> 902  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1503_9381
+#> 903  C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1503_9381
+#> 1018 C:/Users/45036829/Documents/SIPECAM/renamed/1_81_0_1503_0058
+#>                                           FileName indiv_id prob_last_ind
+#> 901  1_81_0_1503_9381__2021-12-14__18-46-34(1).JPG        1      1.000000
+#> 721  1_81_1_1500_9862__2021-12-20__18-25-32(1).JPG        2      0.000000
+#> 702  1_81_1_1500_9617__2021-12-24__09-36-01(1).JPG        3      0.219574
+#> 902  1_81_0_1503_9381__2021-12-27__09-44-29(1).JPG        4      0.500000
+#> 903  1_81_0_1503_9381__2021-12-27__19-33-57(4).JPG        4      0.551718
+#> 1018 1_81_0_1503_0058__2022-01-07__09-06-20(1).JPG        5      0.500000
+#>      prob_new_ind
+#> 901      1.000000
+#> 721      1.000000
+#> 702      0.780426
+#> 902      0.500000
+#> 903      0.448282
+#> 1018     0.500000
 ```
 
 If alpha_sensitivity is provided, the function can additionally plot how
@@ -560,7 +564,7 @@ the MNI varies with the spatial scale parameter.
 mni_res$`Plot MNI vs α`
 ```
 
-<img src="man/figures/README-unnamed-chunk-24-1.png" width="60%" height="120%" />
+<img src="man/figures/README-unnamed-chunk-26-1.png" alt="" width="60%" height="120%" />
 
 ### **Dependencies**
 
