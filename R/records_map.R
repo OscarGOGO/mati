@@ -143,7 +143,6 @@ records_map <- function(data,
     ))
   }
   # If NULL, all records will be treated as a single group.
-
   if (!is.null(species_field)) {
     if (length(species_field) != 1) {
       stop("'species_field' must contain only one column name.")
@@ -208,7 +207,6 @@ records_map <- function(data,
       is.na(zoom) ||
       zoom < 1 ||
       zoom > 20) {
-
     stop("'zoom' must be a single numeric value between 1 and 20.")
   }
 
@@ -216,7 +214,6 @@ records_map <- function(data,
       length(provider) != 1 ||
       is.na(provider) ||
       provider == "") {
-
     stop("'provider' must be a valid character string.")
   }
 
@@ -233,6 +230,7 @@ records_map <- function(data,
       )
     }
   }
+
   if (!is.numeric(width) ||
       length(width) != 1 ||
       is.na(width) ||
@@ -263,7 +261,6 @@ records_map <- function(data,
     as.numeric(as.character(data[[long]]))
   )
 
-
   # Check coordinate conversion
   if (any(is.na(latitude))) {
     stop(
@@ -276,7 +273,6 @@ records_map <- function(data,
       "Missing or non-numeric values were found in the longitude field."
     )
   }
-
 
   # Check geographic ranges
   if (any(latitude < -90 | latitude > 90)) {
@@ -335,147 +331,102 @@ records_map <- function(data,
     ]
 
     if (length(species_missing) > 0) {
-      warning(
-        paste0(
-          "The following species were not found: ",
+      warning(paste0("The following species were not found: ",
           paste(species_missing, collapse = ", ")
         )
       )
     }
+
     # Keep requested species
-    data_work <- data_work[
-      data_work$Species %in% species_filter,
-      ,
-      drop = FALSE
-    ]
+    data_work <- data_work[data_work$Species %in% species_filter, , drop = FALSE]
 
     if (nrow(data_work) == 0) {
-      stop(
-        "There are no records for the selected species."
-      )
+      stop("There are no records for the selected species.")
     }
   }
 
   # SPECIES TO MAP
   species_list <- unique(
-    data_work$Species[
-      !is.na(data_work$Species) &
-        data_work$Species != ""
-    ]
-  )
+    data_work$Species[!is.na(data_work$Species) &
+        data_work$Species != ""])
 
   if (length(species_list) == 0) {
     stop("No valid species records were found.")
   }
 
-  maps <- vector(
-    mode = "list",
-    length = length(species_list)
-  )
-
+  maps <- vector(mode = "list", length = length(species_list))
   names(maps) <- species_list
-
   # LOOP THROUGH SPECIES
-  for (sp in species_list) {
+  for(sp in species_list) {
     # Species records
-    data_sp <- data_work[
-      !is.na(data_work$Species) &
-        data_work$Species == sp,
-      ,
-      drop = FALSE
-    ]
-    frequency_sp <- aggregate(
-      x = rep(1L, nrow(data_sp)),
-      by = list(
-        Station = data_sp$Station
-      ),
-      FUN = sum
-    )
+    data_sp <- data_work[!is.na(data_work$Species) &
+        data_work$Species == sp,  , drop = FALSE]
+
+    frequency_sp <- aggregate(x = rep(1L, nrow(data_sp)),
+                              by = list(Station = data_sp$Station),
+                              FUN = sum)
+
     names(frequency_sp)[2] <- "n"
     result_sp <- station_coords
-    position <- match(
-      result_sp$Station,
-      frequency_sp$Station
-    )
+    position <- match(result_sp$Station, frequency_sp$Station)
     result_sp$n <- frequency_sp$n[position]
     # Stations without detections = 0
-    result_sp$n[
-      is.na(result_sp$n)
-    ] <- 0
+    result_sp$n[is.na(result_sp$n)] <- 0
     result_sp$Species <- sp
     # Detection status
-    result_sp$Status <- ifelse(
-      result_sp$n == 0,
-      "No records",
-      "Records"
-    )
+    result_sp$Status <- ifelse(result_sp$n == 0,
+                               "No records",
+                               "Records")
     # Set factor order explicitly
-    result_sp$Status <- factor(
-      result_sp$Status,
-      levels = c(
-        "No records",
-        "Records"
-      )
-    )
+    result_sp$Status <- factor(result_sp$Status,
+                               levels = c(
+                                 "No records",
+                                 "Records"))
     # Convert to sf
-    result_sf <- sf::st_as_sf(
-      result_sp,
-      coords = c(
-        "Longitude",
-        "Latitude"
-      ),
-      crs = 4326
-    )
+    result_sf <- sf::st_as_sf(result_sp, coords = c("Longitude", "Latitude"),
+                              crs = 4326)
     # Bounding box
-    bbox <- sf::st_bbox(result_sf) |> st_as_sfc() |> st_as_sf() |>
+    bbox <- st_bbox(result_sf) |> st_as_sfc() |> st_as_sf() |>
       st_buffer(0.05) |> st_bbox()
 
+    dx <- as.numeric(bbox["xmax"] - bbox["xmin"])
+    dy <- as.numeric(bbox["ymax"] - bbox["ymin"])
+    # Protection against zero spatial range
+    if (!is.finite(dx) || dx == 0) {
+      dx <- 0.01
+    }
+
+    if (!is.finite(dy) || dy == 0) {
+      dy <- 0.01
+    }
+
+    # 5% map margin
+    xlim <- c(bbox["xmin"] - 0.05 * dx,
+              bbox["xmax"] + 0.05 * dx)
+
+    ylim <- c(bbox["ymin"] - 0.05 * dy,
+              bbox["ymax"] + 0.05 * dy)
+
     # Download map tiles
-    tiles <- tryCatch(
-      maptiles::get_tiles(
-        sf::st_as_sfc(bbox),
-        provider = provider,
-        zoom = zoom
-      ),
+    tiles <- tryCatch(maptiles::get_tiles(sf::st_as_sfc(bbox),
+                                          provider = provider,
+                                          zoom = zoom),
       error = function(e) {stop(
-        paste0(
-          "Basemap tiles could not be downloaded: ",
-          e$message
-        )
-      )
-      }
-    )
+        paste0("Basemap tiles could not be downloaded: ",
+               e$message))})
     # Determine useful size legend breaks
-    max_records <- max(
-      result_sp$n,
-      na.rm = TRUE
-    )
+    max_records <- max(result_sp$n, na.rm = TRUE)
+
     if (max_records <= 5) {
-
       size_breaks <- 0:max_records
-
     } else {
-
-      size_breaks <- pretty(
-        c(0, max_records),
-        n = 4
-      )
-
-      size_breaks <- unique(
-        round(size_breaks)
-      )
-
-      size_breaks <- size_breaks[
-        size_breaks >= 0 &
-          size_breaks <= max_records
-      ]
+      size_breaks <- pretty(c(0, max_records),  n = 4)
+      size_breaks <- unique(round(size_breaks))
+      size_breaks <- size_breaks[size_breaks >= 0 &
+                                   size_breaks <= max_records]
     }
     # Always include zero in legend
-    size_breaks <- sort(
-      unique(
-        c(0, size_breaks)
-      )
-    )
+    size_breaks <- sort(unique(c(0, size_breaks)))
     # CREATE MAP
     result_map <- ggplot2::ggplot() +
       # Satellite imagery
